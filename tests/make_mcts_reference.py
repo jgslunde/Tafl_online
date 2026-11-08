@@ -2,7 +2,7 @@
 """
 Write reference searches of the Python MCTS (mcts.py of the training code), for tests/test_mcts.js.
 
-For each model in the list, plays a few random games and, at some plies, runs mcts.py's search
+For each model (default: those of models.json), plays a few random games and, at some plies, runs mcts.py's search
 with the model's own search settings (from its .json). The network is the same .onnx file the
 browser uses, run with onnxruntime. The visit counts of every root move are recorded; mcts.js run
 on the same positions with onnxruntime-web should give the same counts. So are the network's
@@ -26,14 +26,8 @@ parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.R
 parser.add_argument('training_dir')
 parser.add_argument('--sims', type=int, default=200)
 parser.add_argument('--out', default=os.path.join(HERE, 'reference', 'mcts.json'))
-parser.add_argument('--models', nargs='*', default=[
-    'checkpoints/brandubh_2_baseline_iter_400',
-    'checkpoints/brandubh_2_line_4x32_mobility_iter_500',
-    'checkpoints/brandubh_2_5w_line_4x32_mobility_iter_200',
-    'checkpoints/sami_tablut_baseline_iter_600',
-    'checkpoints/copenhagen_baseline_iter_400',
-    'checkpoints/copenhagen_line_10x64_gpool_iter_250',
-])
+parser.add_argument('--models', nargs='*', help='Model paths without extension (default: all of models.json)',
+                    default=[m['onnx'].removesuffix('.onnx') for m in json.load(open(os.path.join(REPO, 'models.json')))['models']])
 args = parser.parse_args()
 sys.path.insert(0, os.path.abspath(args.training_dir))
 
@@ -56,12 +50,6 @@ class OnnxNetwork:
 
     def __call__(self, x):
         return tuple(torch.from_numpy(o) for o in self.session.run(None, {self.input_name: x.numpy()}))
-
-
-def feature_spec(planes):
-    history = sum(1 for p in planes if p.startswith('attackers_t'))
-    return FeatureSpec(history_length=history, constant_planes='ones' in planes,
-                       mobility_planes='reach_attackers' in planes, region_plane='king_region' in planes)
 
 
 def outlook(network, game, spec):
@@ -91,7 +79,8 @@ def main():
                       fpu_reduction=search.get('fpu_reduction') if search.get('fpu_reduction') is not None else -0.25,
                       search_discount=search.get('discount') or 1.0)
         network = OnnxNetwork(os.path.join(REPO, base + '.onnx'))
-        spec = feature_spec(info['input']['planes'])
+        spec = FeatureSpec.from_dict(info['network']['features'])
+        assert spec.plane_names() == info['input']['planes'], f'{base}: features and input planes disagree'
         mcts = MCTS(network, num_simulations=args.sims, feature_spec=spec, **params)
         for game_index in range(6):
             game = Tafl(rules)

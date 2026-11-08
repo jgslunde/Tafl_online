@@ -97,8 +97,11 @@
             // The network output depends only on the input planes. Without history planes those
             // depend only on the position key and the (fixed) rules, so outputs can be reused when
             // a position comes up again: in transpositions, and in later searches. This changes
-            // nothing in the search, only its speed.
+            // nothing in the search, only its speed. The repetition plane is the one exception: the
+            // same position gives another input when one more occurrence ends the game, so such
+            // positions bypass the cache (see evaluate).
             this.cacheSize = this.historyNeeded === 0 ? (options.cacheSize !== undefined ? options.cacheSize : 50000) : 0;
+            this.repetitionPlane = this.planes.some(p => p.kind === 'repetition');
             this.cache = new Map();
             this.cacheRules = null;
             this.calls = 0;
@@ -151,7 +154,9 @@
          */
         async evaluate(game, moves) {
             let key = null;
-            if (this.cacheSize > 0) {
+            // Positions whose repetition plane is on (as in Tafl.buildFeatures) are rare: not cached
+            const repeated = this.repetitionPlane && game.repetitionCount() >= game.rules.repetition_count - 1;
+            if (this.cacheSize > 0 && !repeated) {
                 // Some planes (corners, throne, reach) and the legal moves depend on the rules: a game
                 // with other rules starts afresh
                 const rules = Tafl.rulesKey(game.rules);

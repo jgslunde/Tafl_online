@@ -74,6 +74,26 @@ async function main() {
             `(Python ${c.root_value.toFixed(4)}, difference ${valueDiff.toExponential(1)}), ` +
             `${all.movesLeft.toFixed(1)} plies left, endings within ${endingDiff.toExponential(1)}`);
     }
+    // With a repetition plane, the output cache must not hand a position's output to its next
+    // occurrence: evaluate the start position, move both sides there and back, evaluate it again
+    for (const [model, { info, evaluator }] of Object.entries(evaluators)) {
+        if (!info.input.planes.includes('repetition')) continue;
+        const cached = new NetworkEvaluator(ort, evaluator.session, info);
+        const game = new Tafl.TaflGame(info.rules);
+        const first = await cached.evaluate(game, game.legalMoves());
+        const there = [];
+        for (let i = 0; i < 2; i++) {
+            there.push(game.legalMoves()[0]);
+            game.makeMove(there[i]);
+        }
+        for (const m of there) game.makeMove(Tafl.encodeMove(Tafl.moveTo(m), Tafl.moveFrom(m)));
+        const again = await cached.evaluate(game, game.legalMoves());
+        const direct = (await evaluator.run(game)).value;
+        const ok = game.repetitionCount() === 2 && Math.abs(again.value - direct) < 1e-6;
+        if (!ok) failed++;
+        console.log(`${ok ? 'ok  ' : 'FAIL'} output cache of ${model} with a repeated position: ` +
+            `value ${again.value.toFixed(4)}, uncached ${direct.toFixed(4)}, first occurrence ${first.value.toFixed(4)}`);
+    }
     console.log(`${cases.length} searches: ${exact} identical, ${close} within 2%, ${failed} different.`);
     process.exit(failed === 0 ? 0 : 1);
 }

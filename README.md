@@ -31,9 +31,6 @@ the Python engine, so regenerate it once the rule set is in the training code.
    `python convert_to_onnx.py <checkpoint.pth> --output <this repo>/checkpoints/<name>.onnx`.
    This writes `<name>.json` next to it: board size, input planes, the rule set it was trained with
    (`ruleset`, and all its fields in `rules`) and its search settings.
-   If only the `.onnx` file and its run's `run_config.json` are at hand, `tools/describe_model.py`
-   copies the model here and writes the same description with the exporter's own function:
-   `python tools/describe_model.py /path/to/Tafl_RL <run dir>/checkpoint_iter_N.onnx checkpoints/<name>.onnx`.
 2. Add an entry to `models.json` with an `id`, a display `name`, the `onnx` and `info` paths and an
    optional `note`. To make it the default for its rule set, put its id under `defaults`, keyed by
    the rule set name (for example `"brandubh_2"`).

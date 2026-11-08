@@ -165,8 +165,8 @@
             BRANDUBH_2,
             replace(BRANDUBH_2, { name: 'brandubh_1', king_capture: 'weak_near_throne',
                 description: 'Brandubh 1 7x7 (aagenielsen.dk, 2015-2020): Brandubh 2, but the king beside the throne is captured by three' }),
-            replace(BRANDUBH_2, { name: 'walker_brandub', king_capture: 'weak', throne_hostile: false,
-                description: "Walker's Brandub 7x7 (2011), as played on aagenielsen.dk" }),
+            replace(BRANDUBH_2, { name: 'walker_brandubh', king_capture: 'weak', throne_hostile: false,
+                description: "Walker's Brandubh 7x7 (2011), as played on aagenielsen.dk" }),
             replace(BRANDUBH_2, { name: 'brandubh_2_5w', first_player: 'defenders', throne_passable: false,
                 repetition_count: 5, description: 'Brandubh 2.5W 7x7 (draft of February 2026)' }),
             SAMI_TABLUT,
@@ -681,7 +681,7 @@
 
         /** True if no defender (king included) can reach the edge through squares without attackers. */
         areDefendersEncircled() {
-            const region = defenderRegion(this);
+            const region = connectedRegion(this, p => p >= DEFENDER, p => p !== ATTACKER);
             const isEdge = this.geo.isEdge;
             for (let sq = 0; sq < region.length; sq++) if (region[sq] && isEdge[sq]) return false;
             return true;
@@ -797,16 +797,21 @@
     // ------------------------------------------------------------------------------------------
 
     /**
-     * Squares connected to a defender or the king through squares that hold no attacker (their own
-     * squares included). The defenders are encircled exactly when this region touches no edge
-     * square. Python: features.defender_region_plane and Tafl._defenders_encircled.
+     * The squares reachable from the squares whose piece passes `isStart`, stepping to side
+     * neighbours whose piece passes `canEnter` (start squares included), as a 0/1 Uint8Array.
+     * Two regions use it:
+     * - defender region: start at defenders and king, enter any square without an attacker. The
+     *   defenders are encircled exactly when it touches no edge square. Python:
+     *   features.defender_region_plane and Tafl._defenders_encircled.
+     * - king region: start at the king, enter empty squares; where the king can walk if nothing
+     *   else moves. Python: features.king_region_plane.
      */
-    function defenderRegion(game) {
+    function connectedRegion(game, isStart, canEnter) {
         const N = game.N, b = game.board;
         const region = new Uint8Array(N * N);
         const stack = [];
         for (let sq = 0; sq < b.length; sq++) {
-            if (b[sq] >= DEFENDER) {
+            if (isStart(b[sq])) {
                 region[sq] = 1;
                 stack.push(sq);
             }
@@ -814,7 +819,7 @@
         while (stack.length) {
             const sq = stack.pop();
             for (const n of neighbours(N, sq)) {
-                if (!region[n] && b[n] !== ATTACKER) {
+                if (!region[n] && canEnter(b[n])) {
                     region[n] = 1;
                     stack.push(n);
                 }
@@ -844,7 +849,7 @@
 
     const PIECE_PLANES = { attackers: ATTACKER, defenders: DEFENDER, king: KING };
     const SIMPLE_PLANES = new Set(['player', 'ones', 'corners', 'throne', 'reach_attackers',
-        'reach_defenders', 'reach_king', 'defender_region']);
+        'reach_defenders', 'reach_king', 'defender_region', 'king_region', 'repetition']);
 
     /**
      * Parse the plane names of a model description (input.planes in its .json, from
@@ -869,12 +874,13 @@
      * The network input of a position: a Float32Array of planes.length * N * N values, 0 or 1, in
      * the order of `planes` (from parsePlanes). History planes need game.prevBoards; before the
      * start of the game they are zero. The corner plane is empty without corner squares, the throne
-     * plane without a throne.
+     * plane without a throne. The repetition plane is all ones when one more occurrence of the
+     * position ends the game (Python: features.repetition_plane).
      */
     function buildFeatures(game, planes, out) {
         const N = game.N, NN = N * N, b = game.board;
         out = out || new Float32Array(planes.length * NN);
-        let reach = null, region = null;
+        let reach = null;
         planes.forEach((plane, i) => {
             const off = i * NN;
             switch (plane.kind) {
@@ -908,8 +914,15 @@
                     break;
                 }
                 case 'defender_region':
-                    region = region || defenderRegion(game);
+                case 'king_region': {
+                    const region = plane.kind === 'defender_region'
+                        ? connectedRegion(game, p => p >= DEFENDER, p => p !== ATTACKER)
+                        : connectedRegion(game, p => p === KING, p => p === EMPTY);
                     for (let sq = 0; sq < NN; sq++) if (region[sq]) out[off + sq] = 1;
+                    break;
+                }
+                case 'repetition':
+                    if (game.repetitionCount() >= game.rules.repetition_count - 1) out.fill(1, off, off + NN);
                     break;
             }
         });
@@ -921,7 +934,7 @@
         VARIANTS, RULESETS, KING_CAPTURE_RULES, REPETITION_RULES, ENDINGS, endings, TaflGame,
         makeRules, normalizeRules, rulesKey, rulesEqual, geometry,
         encodeMove, moveFrom, moveTo, policyIndex, squareName, moveName,
-        parsePlanes, historyNeeded, buildFeatures, reachPlanes, defenderRegion,
+        parsePlanes, historyNeeded, buildFeatures, reachPlanes, connectedRegion,
     };
 
     if (typeof module !== 'undefined' && module.exports) module.exports = Tafl;

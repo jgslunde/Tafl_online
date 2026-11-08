@@ -25,7 +25,7 @@ const DEFAULT_RULESETS = { 7: 'brandubh_2', 9: 'sami_tablut', 11: 'copenhagen' }
 const RULESET_INFO = {
     brandubh_2: { title: 'Brandubh 2', defenders: '62 % of 2,318' },
     brandubh_1: { title: 'Brandubh 1', defenders: '57 % of 926' },
-    walker_brandub: { title: "Walker's Brandub", defenders: '55 % of 468' },
+    walker_brandubh: { title: "Walker's Brandubh", defenders: '55 % of 468' },
     brandubh_2_5w: { title: 'Brandubh 2.5W', defenders: '59 % of 354' },
     sami_tablut: { title: 'Sami Tablut', defenders: '49 % of 966' },
     sami_tablut_2026: { title: 'Sami Tablut 2026', defenders: '54 % of 230' },

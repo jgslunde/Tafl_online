@@ -4,8 +4,9 @@ Write reference games from the Python engine (tafl.py), for tests/test_engine.js
 
 The JavaScript engine (tafl.js) must play exactly the game the networks were trained on. This
 script records, for every move: the position before it (board, player to move, earlier positions),
-all legal moves in engine order, all input planes (history of 3 positions, constant, reach and
-defender-region planes), the move, and the position and result after it. Two sources:
+all legal moves in engine order, all input planes (history of 3 positions, constant, reach,
+defender-region, king-region and repetition planes), the move, and the position and result after
+it. Three sources:
 
 - games under each of the twelve named rule sets, from the start, with random moves biased towards
   what random play rarely reaches: captures, king moves, attackers next to the king, moves along the
@@ -48,7 +49,8 @@ import tafl  # noqa: E402
 from features import FeatureSpec, build_features  # noqa: E402
 from tafl import KING, RULESETS, Tafl  # noqa: E402
 
-PLANES = FeatureSpec(history_length=3, constant_planes=True, mobility_planes=True, region_plane=True)
+PLANES = FeatureSpec(history_length=3, constant_planes=True, mobility_planes=True, region_plane=True,
+                     king_region_plane=True, repetition_plane=True)
 
 
 def pack(move, n):
@@ -282,10 +284,11 @@ def main():
     walls = sum(1 for c in captures if len(c['captured']) >= 2 and c['rules']['shieldwall'])
     print(f'fuzz: {len(forts)} fort positions ({sum(f["fort"] for f in forts)} forts), '
           f'{len(captures)} captures ({walls} with two or more pieces) -> {path}')
-    for old in ('reference_brandubh.json.gz', 'reference_tablut.json.gz', 'reference_hnefatafl.json.gz'):
+    for old in ('reference_brandubh.json.gz', 'reference_tablut.json.gz', 'reference_hnefatafl.json.gz',
+                'reference_walker_brandub.json.gz'):
         path = os.path.join(args.out, old)
         if os.path.exists(path):
-            os.remove(path)  # from before the named rule sets
+            os.remove(path)  # from before the named rule sets, or under an old name
     for name in RULESETS:
         games = [play(name, rng) for _ in range(args.games)]
         path = os.path.join(args.out, f'reference_{name}.json.gz')
