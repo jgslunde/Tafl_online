@@ -43,11 +43,11 @@
       "note": "Iteration 400 of the Copenhagen baseline run."
     },
     {
-      "id": "copenhagen_line_gpool_250",
-      "name": "Line 10x64 · global pool · it. 250",
-      "onnx": "checkpoints/copenhagen_line_10x64_gpool_iter_250.onnx",
-      "info": "checkpoints/copenhagen_line_10x64_gpool_iter_250.json",
-      "note": "Iteration 250 of the Copenhagen line network run."
+      "id": "copenhagen_line_gpool_500",
+      "name": "Line 10x64 · global pool · it. 500",
+      "onnx": "checkpoints/copenhagen_v2_line_10x64_gpool_all_planes_500.onnx",
+      "info": "checkpoints/copenhagen_v2_line_10x64_gpool_all_planes_500.json",
+      "note": "Iteration 500 of the Copenhagen line network run."
     }
   ]
 }
