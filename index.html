@@ -34,6 +34,7 @@
                 <div id="eval-detail"></div>
                 <!-- The network's outlook: on hover, or after a tap on a touch screen -->
                 <div id="eval-outlook" role="tooltip">
+                    <div id="outlook-value"><span>Value (−1 to +1)</span><span>–</span></div>
                     <div class="outlook-title">The network expects</div>
                     <div id="outlook-moves"></div>
                     <ol id="outlook-endings"></ol>
@@ -61,14 +62,17 @@
                     suggests that these rules forbid is replaced by a random one. It plays oddly until it finds a forced win.
                 </p>
                 <p>
-                    The evaluation is shown from the attackers' side: +1 means the attackers win, −1 the defenders.
+                    The evaluation is shown from the attackers' side: positive when they are ahead, negative when the
+                    defenders are. It is on a chess engine's scale: about +1 is a clear edge, +5 almost a win. It is
+                    made from the network's value, which goes from −1 (the defenders win) to +1 (the attackers win),
+                    with the conversion Leela Chess Zero uses.
                     Move suggestions show each move's share of the search, and its value for the side to move.
                 </p>
                 <p>
-                    Point at the eval bar (tap it on a phone) to see what the network expects from the current
-                    position: how many more moves the game will last (the moves of both sides counted), and how
-                    likely each way of ending it is.
-                    These are the network's own guesses, without a search.
+                    Point at the eval bar (tap it on a phone) to see the value behind the evaluation, and what the
+                    network expects from the current position: how many more moves the game will last (the moves of
+                    both sides counted), and how likely each way of ending it is.
+                    These expectations are the network's own guesses, without a search.
                 </p>
             </div>
         </div>

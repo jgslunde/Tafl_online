@@ -211,7 +211,8 @@ async function main() {
             '"Start game" starts Brandubh 2 on a 7x7 board');
         check(await count('#board td.corner') === 4 && await count('#board td.throne') === 1, 'its corners and throne are marked');
         await waitFor('app.modelState === "ready" && app.analysis.stats && app.analysis.stats.visits >= 200', 'the Brandubh 2 model and its analysis', 60000);
-        check(true, `the Brandubh 2 network evaluates the position (${await evaluate('document.getElementById("eval-value").textContent')})`);
+        const score = await evaluate('document.getElementById("eval-value").textContent');
+        check(/^[+-]\d+\.\d+$/.test(score), `the Brandubh 2 network evaluates the position (${score})`);
 
         // --- The network's outlook: hidden until the pointer is on the eval bar ---
         const outlookShown = () => evaluate('getComputedStyle(document.getElementById("eval-outlook")).display !== "none"');
@@ -220,7 +221,8 @@ async function main() {
         const [ex, ey] = await evaluate('(() => { const r = document.getElementById("eval-bar-container").getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()');
         await mouse('mouseMoved', ex, ey, 0);
         const outlook = await evaluate('document.getElementById("eval-outlook").innerText');
-        check(await outlookShown() && /Moves left\s+about \d+/.test(outlook) && await count('#outlook-endings li') >= 2 && outlook.includes('%'),
+        check(await outlookShown() && /Value \(−1 to \+1\)\s+[+-][01]\.\d{3}/.test(outlook) && /Moves left\s+about \d+/.test(outlook) &&
+            await count('#outlook-endings li') >= 2 && outlook.includes('%'),
             `pointing at the eval bar shows it: ${outlook.replace(/\s+/g, ' ')}`);
         check(!outlook.includes('Exit fort') && !outlook.includes('Encirclement'), 'it leaves out the endings Brandubh 2 does not have');
         await screenshot('outlook.png');

@@ -146,12 +146,20 @@ body {
     padding: 0;
 }
 
-/* "Moves left" and each ending: text on the left, number on the right */
+/* The value, "Moves left" and each ending: text on the left, number on the right */
+#outlook-value,
 #outlook-moves,
 #outlook-endings li {
     display: grid;
     grid-template-columns: 1fr auto;
     column-gap: 2vh;
+}
+
+/* The value belongs to the eval bar, not to the network's expectations below it */
+#outlook-value {
+    padding-bottom: 0.6vh;
+    margin-bottom: 0.8vh;
+    border-bottom: 1px solid #3a4a62;
 }
 
 /* The most likely ending stands out */

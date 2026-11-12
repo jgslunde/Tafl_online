@@ -827,8 +827,10 @@ function heuristicEval(token) {
         setTimeout(() => token === app.token && heuristicEval(token), 200);
         return;
     }
-    const { eval: value } = runMinimax(app.game, 4);
-    if (token === app.token) setEval(toAttackerView(value), 'heuristics, depth 4');
+    const value = toAttackerView(runMinimax(app.game, 4).eval);
+    // The heuristics use a wider scale than the network's [-1, 1]
+    const text = value > 5 ? 'attackers winning' : value < -5 ? 'defenders winning' : value.toFixed(2);
+    if (token === app.token) setEval(value, 'heuristics, depth 4', text);
 }
 
 function updateEvalVisibility() {
@@ -889,8 +891,10 @@ function showOutlook() {
 /**
  * Show an evaluation from the attackers' side (+1 attackers win), or null for none. Without a value
  * the bar stays where the last one put it, dimmed, so a new search moves it on from there.
+ * The number shown is a chess-like score made from the value; `text` replaces it (for the
+ * heuristics, whose values are on another scale, and for a finished game).
  */
-function setEval(value, detail) {
+function setEval(value, detail, text = null) {
     updateEvalVisibility();
     const valueEl = $('eval-value');
     const bar = $('eval-bar');
@@ -899,10 +903,16 @@ function setEval(value, detail) {
     if (missing) {
         valueEl.textContent = '–';
     } else {
-        // The heuristics use a wider scale than the network's [-1, 1]
-        valueEl.textContent = value > 5 ? 'attackers winning' : value < -5 ? 'defenders winning' : value.toFixed(2);
+        // Score in pawns by the "centipawn" conversion of Leela Chess Zero, 90 · tan(1.5637541897 · q)
+        // centipawns, whose constants make its scores look like a chess engine's pawn scale:
+        // +1 at q = 0.54, +5 at q = 0.89, and at most ±128 (at q = ±1)
+        const score = 0.9 * Math.tan(1.5637541897 * value);
+        valueEl.textContent = text || `${score >= 0 ? '+' : ''}${score.toFixed(Math.abs(score) < 10 ? 2 : 1)}`;
         bar.style.left = `${((Math.max(-1, Math.min(1, value)) + 1) / 2) * 100}%`;
     }
+    // The value itself (-1 to +1) is in the outlook card
+    const shown = !missing && app.evalMode !== 'heuristic';
+    $('outlook-value').children[1].textContent = shown ? `${value >= 0 ? '+' : ''}${value.toFixed(3)}` : '–';
     $('eval-detail').textContent = detail || '';
 }
 
@@ -1032,7 +1042,8 @@ function showGameOver() {
     }[g.endReason] || '';
     $('winMessage').innerHTML = `${winner ? `${winner} win!` : 'Draw!'}<small>${reason} Click to see the board.</small>`;
     $('overlay').classList.remove('hidden');
-    setEval(g.winner === null ? 0 : g.winner === ATTACKER_PLAYER ? 1 : -1, 'game over');
+    const result = g.winner === null ? 0 : g.winner === ATTACKER_PLAYER ? 1 : -1;
+    setEval(result, 'game over', ['defenders won', 'draw', 'attackers won'][result + 1]);
     showOutlook();
 }
 
