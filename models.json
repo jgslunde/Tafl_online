@@ -4,7 +4,7 @@
     "brandubh_2": "brandubh_2_baseline_400",
     "brandubh_2_5w": "brandubh_2_5w_line_200",
     "sami_tablut": "sami_tablut_baseline_600",
-    "copenhagen": "copenhagen_line_gpool_500"
+    "copenhagen": "copenhagen_line_gpool_870"
   },
   "models": [
     {
@@ -50,11 +50,11 @@
       "note": "Iteration 250 of the Copenhagen line network run."
     },
     {
-      "id": "copenhagen_line_gpool_500",
-      "name": "Line 10x64 · global pool · all planes · it. 500",
-      "onnx": "checkpoints/copenhagen_v2_line_10x64_gpool_all_planes_500.onnx",
-      "info": "checkpoints/copenhagen_v2_line_10x64_gpool_all_planes_500.json",
-      "note": "Iteration 500 of the Copenhagen v2 line network run, with all input planes."
+      "id": "copenhagen_line_gpool_870",
+      "name": "Line 10x64 · global pool · all planes · it. 870",
+      "onnx": "checkpoints/copenhagen_v2_line_10x64_gpool_all_planes_870.onnx",
+      "info": "checkpoints/copenhagen_v2_line_10x64_gpool_all_planes_870.json",
+      "note": "Iteration 870 of the Copenhagen v2 line network run, with all input planes."
     }
   ]
 }
