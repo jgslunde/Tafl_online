@@ -118,5 +118,5 @@
     "discount": 0.995
   },
   "run_name": "copenhagen v2.5: branched from the v2 run, plus a self-play temperature floor of 0.2, exit-fort games boosted 5x up to iteration 700, only full searches stored (fewer batches, smaller buffer), newest iteration held out for validation",
-  "iteration": 870
+  "iteration": 1000
 }
