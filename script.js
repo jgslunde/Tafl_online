@@ -897,6 +897,15 @@ function showOutlook() {
 }
 
 /**
+ * A chess-like score in pawns from a value in [-1, 1], by the "centipawn" conversion of Leela Chess
+ * Zero: 90 · tan(1.5637541897 · q) centipawns. Its constants make the scores look like a chess
+ * engine's pawn scale: +1 at q = 0.54, +5 at q = 0.89, and at most ±128 (at q = ±1).
+ */
+function chessScore(value) {
+    return 0.9 * Math.tan(1.5637541897 * value);
+}
+
+/**
  * Show an evaluation from the attackers' side (+1 attackers win), or null for none. Without a value
  * the bar stays where the last one put it, dimmed, so a new search moves it on from there.
  * The number shown is a chess-like score made from the value; `text` replaces it (for the
@@ -911,10 +920,7 @@ function setEval(value, detail, text = null) {
     if (missing) {
         valueEl.textContent = '–';
     } else {
-        // Score in pawns by the "centipawn" conversion of Leela Chess Zero, 90 · tan(1.5637541897 · q)
-        // centipawns, whose constants make its scores look like a chess engine's pawn scale:
-        // +1 at q = 0.54, +5 at q = 0.89, and at most ±128 (at q = ±1)
-        const score = 0.9 * Math.tan(1.5637541897 * value);
+        const score = chessScore(value);
         valueEl.textContent = text || `${score >= 0 ? '+' : ''}${score.toFixed(Math.abs(score) < 10 ? 2 : 1)}`;
         bar.style.left = `${((Math.max(-1, Math.min(1, value)) + 1) / 2) * 100}%`;
     }
@@ -970,7 +976,9 @@ function renderSuggestions() {
         if (share < 0.5) continue;
         const overlay = document.createElement('div');
         overlay.className = 'policy-overlay';
-        const q = s.q === null ? '' : `${s.q >= 0 ? '+' : ''}${s.q.toFixed(1)} `;
+        // The move's score from the attackers' side, as on the eval bar
+        const score = s.q === null ? null : chessScore(toAttackerView(s.q));
+        const q = score === null ? '' : `${score >= 0 ? '+' : ''}${score.toFixed(1)} `;
         overlay.textContent = q ? `${q}(${Math.round(share)}%)` : `${Math.round(share)}%`;
         app.cells[sq].td.appendChild(overlay);
     }
