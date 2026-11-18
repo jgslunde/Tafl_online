@@ -19,7 +19,7 @@ Ranked by recorded games on aagenielsen.dk, the only site that publishes counts.
 | Variant | Games | What makes it different | Fair? |
 |---|---|---|---|
 | Brandubh 2 | 2,318 | The king wins in a corner. Two attackers capture him anywhere except on the throne, where four are needed. Corners and the empty throne can replace an enemy piece in a capture, but the throne never counts against the king. | No. Defenders win 62%, and 69% among top players. It tested at 52–54% in 2020, then drifted. |
-| Walker's Brandub | 468 | Like Brandubh 2, but two attackers capture the king even on the throne. Only the corners help in captures, never the throne. | Roughly: 55% overall. Experts say the attackers win most games between strong players (one 10-game expert match ended 9–1). |
+| Walker's Brandubh | 468 | Like Brandubh 2, but two attackers capture the king even on the throne. Only the corners help in captures, never the throne. | Roughly: 55% overall. Experts say the attackers win most games between strong players (one 10-game expert match ended 9–1). |
 | Brandubh 2.5W (2026 draft) | 354 | Brandubh 2, but the defenders move first, and only the king may cross the throne. The attackers win when a position comes up for the fifth time. | Promising: 59% overall, 55% among top players. Still new. |
 
 ### 9x9
@@ -80,7 +80,7 @@ Ranked by recorded games on aagenielsen.dk, the only site that publishes counts.
 |---|---|---|---|---|---|
 | **Brandubh 2** (2020) | Corner | 2 sides; 4 on the throne | Hostile corners and empty throne | WTF rules sheet; most games on aagenielsen.dk | 62% (2,318); top players 69% (364) |
 | Brandubh 1 (2015–2020) | Corner | Weak king | Sámi Tablut rules plus corners | aagenielsen.dk until 2020 (some games until 2021) | 57% (926) |
-| Walker's Brandub (2011) | Corner | 2 sides everywhere, even on the throne | Throne not hostile | Walker's leaflets; Dragonheel's Lair; aagenielsen.dk since 2022 | 55% (468); 46% on Dragonheel's Lair (314) |
+| Walker's Brandubh (2011) | Corner | 2 sides everywhere, even on the throne | Throne not hostile | Walker's leaflets; Dragonheel's Lair; aagenielsen.dk since 2022 | 55% (468); 46% on Dragonheel's Lair (314) |
 | Brandubh 2.5W (2026 draft) | Corner | As Brandubh 2 | Defenders first; only the king may cross the throne | New test on aagenielsen.dk | 59% (354); top players 55% (100) |
 | Shop Brandubh | Corner | 4 sides, often unarmed | Varies | Many commercial sets | No data |
 | Magpie (1999) | Corner | 4 sides; the edge counts as a side | King moves one square at a time | Rare | 51% (112) |
@@ -143,14 +143,14 @@ Every rule carries a tag that says where it comes from:
 - **[Text]** – the official rule text of that variant.
 - **[Site]** – how aagenielsen.dk plays it, as confirmed in its forum. The win rates in this document come from games played this way.
 - **[Ours]** – the sources are silent or unclear, so this document makes a choice. Change it if you prefer, but then win rates may differ.
-- **[Checked]** – the game records of aagenielsen.dk show that the site plays the rule exactly as written. Other readings conflict with many recorded games (Part D). This tag comes on top of the tags above. Only Brandubh 2, Walker's Brandub, Brandubh 2.5W, Sámi Tablut and Copenhagen could be checked.
+- **[Checked]** – the game records of aagenielsen.dk show that the site plays the rule exactly as written. Other readings conflict with many recorded games (Part D). This tag comes on top of the tags above. Only Brandubh 2, Walker's Brandubh, Brandubh 2.5W, Sámi Tablut and Copenhagen could be checked.
 
 ### Quick comparison
 
 | Variant | Board | First move | King's goal | King can capture | King captured by | Throne | Corners |
 |---|---|---|---|---|---|---|---|
 | Brandubh 2 | 7x7 | Attackers | Corner | Yes | 2 (4 on throne) | Restricted; all may pass; see card | Restricted; hostile to all |
-| Walker's Brandub | 7x7 | Attackers | Corner | Yes | 2 everywhere | Restricted; all may pass; never hostile | Restricted; hostile to all |
+| Walker's Brandubh | 7x7 | Attackers | Corner | Yes | 2 everywhere | Restricted; all may pass; never hostile | Restricted; hostile to all |
 | Brandubh 2.5W | 7x7 | Defenders | Corner | Yes | 2 (4 on throne) | Only the king may stop or pass; see card | Restricted; hostile to all |
 | Sámi Tablut | 9x9 | Defenders | Edge | Yes | 2 (4 on throne, 3 beside it) | Restricted; all may pass; see card | Ordinary squares |
 | Sámi Tablut, 2026 version | 9x9 | Defenders | Edge | Yes | As Sámi Tablut | Restricted; attackers may not pass; hostile to attackers only | Ordinary squares |
@@ -276,7 +276,7 @@ Start position **[Text; forum diagram; Checked]**:
 - Defenders (4): c4, d3, d5, e4
 - Attackers (8): a4, b4, d1, d2, d6, d7, f4, g4
 
-#### C2. Walker's Brandub (7x7), as played on aagenielsen.dk
+#### C2. Walker's Brandubh (7x7), as played on aagenielsen.dk
 
 | Rule | Value |
 |---|---|
@@ -516,7 +516,7 @@ Two periods were left out. First, records from before 2017 contain many more bro
 | Variant (name on the site) | Period | Games | Moves | Captures that differ | Rule endings reproduced |
 |---|---|---|---|---|---|
 | Brandubh 2 ("Brandubh 7x7 (Brandubh 2)") | 2019–2026 | 2,499 | 54,157 | 0 | 652 of 652 |
-| Walker's Brandub ("Brandubh 7x7 (Walker)") | 2014–2025 | 500 | 9,885 | 0 | 158 of 158 |
+| Walker's Brandubh ("Brandubh 7x7 (Walker)") | 2014–2025 | 500 | 9,885 | 0 | 158 of 158 |
 | Brandubh 2.5W ("Brandubh2.5W 7x7") | 2026 | 500 | 12,887 | 0 | 100 of 100 |
 | Sámi Tablut, Saami Tablut-w | 2021–2026 | 1,098 | 34,089 | 0 | 345 of 345 |
 | Sámi Tablut, Saami Tablut-s | 2017–2022 | 2,477 | 80,754 | 0 | 1,331 of 1,338 (a) |
@@ -575,7 +575,7 @@ Two periods were left out. First, records from before 2017 contain many more bro
 **What could not be checked.**
 
 - Sea Battle 9x9, Market Hnefatafl, Historical 11x11 and Fetlar: no game records were available. Their cards rest on the texts alone.
-- Rules that never came up in the records: encirclement in the Brandubh variants; no legal move in Walker's Brandub, Brandubh 2.5W and Sámi Tablut; the fifth-occurrence repetition of 2.5W; the match rule (A11).
+- Rules that never came up in the records: encirclement in the Brandubh variants; no legal move in Walker's Brandubh, Brandubh 2.5W and Sámi Tablut; the fifth-occurrence repetition of 2.5W; the match rule (A11).
 
 **Reading the records.** To test your own program against the same data:
 
@@ -589,7 +589,7 @@ Two periods were left out. First, records from before 2017 contain many more bro
 ## Sources
 
 - aagenielsen.dk (World Tafl Federation): [measured balances](https://aagenielsen.dk/tafl_balances.php); [rule collection](https://aagenielsen.dk/tafl_rules.php); summaries of [Copenhagen](https://aagenielsen.dk/copenhagen_summary.php), [Tablut](https://aagenielsen.dk/tablut_summary.php), [Tawlbwrdd](https://aagenielsen.dk/tawlbwrdd_summary.php), [Brandubh](https://aagenielsen.dk/brandubh_summary.php) and [Ard Ri](https://aagenielsen.dk/ardri_summary.php); rules for [Copenhagen](https://aagenielsen.dk/copenhagen_rules.php), [Fetlar](https://aagenielsen.dk/fetlar_rules_en.php), [Historical Hnefatafl](https://aagenielsen.dk/historical_hnefatafl_rules.php), [Brandubh 2](https://aagenielsen.dk/brandubh2_rules_en.pdf), [Brandubh 2.5W](https://aagenielsen.dk/Brandubh2.5W/Brandubh2.5WOfficialRulesDraft.html), [Sea Battle](https://aagenielsen.dk/seabattle_rules.php), [Ashton Tablut](https://aagenielsen.dk/ashton_rules.php) and [Magpie](https://aagenielsen.dk/magpie_rules.php).
-- aagenielsen.dk game records, downloaded in October 2026 (25,933 games): Brandubh 1, Brandubh 2, Brandubh 2.5W, Walker's Brandub, the three Sámi Tablut versions and Copenhagen. Used in Part D.
+- aagenielsen.dk game records, downloaded in October 2026 (25,933 games): Brandubh 1, Brandubh 2, Brandubh 2.5W, Walker's Brandubh, the three Sámi Tablut versions and Copenhagen. Used in Part D.
 - [Market Hnefatafl rules sheet](https://aagenielsen.dk/tablutmarketregler_engelsk.pdf) (aagenielsen.dk). Board diagrams on aagenielsen.dk for the Lewis cross, Bell, Simple Tafl and Sea Battle 9x9 starting positions.
 - aagenielsen.dk forum threads: [Brandubh 7x7](https://aagenielsen.dk/hnefataflforum/phpBB3/viewtopic.php?t=37), [Saami Tablut](https://aagenielsen.dk/hnefataflforum/phpBB3/viewtopic.php?t=6), [Tawlbwrdd 11x11](https://aagenielsen.dk/hnefataflforum/phpBB3/viewtopic.php?t=25), [Historical Hnefatafl](https://aagenielsen.dk/hnefataflforum/phpBB3/viewtopic.php?t=56).
 - Damian Walker: [Four Schools of Hnefatafl](http://tafl.cyningstan.com/post/1276/four-schools-of-hnefatafl) (2015), [Tablut](http://tafl.cyningstan.com/page/170/tablut), [Brandub leaflet](http://www.cyningstan.com/data-download/395/brandub-leaflet), [Magpie leaflet](http://tafl.cyningstan.com/data-download/968/magpie-leaflet).

@@ -171,7 +171,7 @@ async function evaluate(job) {
     const game = Tafl.TaflGame.fromState(state);
     requireModel(game);
     if (game.gameOver) {
-        const value = game.winner === game.currentPlayer ? 1 : -1;
+        const value = game.winner === null ? 0 : (game.winner === game.currentPlayer ? 1 : -1);
         self.postMessage({ type: 'done', id, result: { value, children: [], terminal: true, ending: null, movesLeft: 0 } });
         return;
     }
