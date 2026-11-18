@@ -1,9 +1,9 @@
-# HnefataflOnlineGame
+# Tafl_online
 
 Tafl in the browser under the twelve named rule sets of the training code (Brandubh 2,
 Copenhagen, Fetlar, Sami Tablut, Sea Battle, ... on 7×7, 9×9 and 11×11 boards) and the 2026 version
 of Sami Tablut, against AIs trained with reinforcement learning in
-[jgslunde/Tafl_RL](https://github.com/jgslunde/Tafl_RL).
+[jgslunde/Tafl_RL](https://github.com/jgslunde/Tafl_RL). Play it at https://tafl.jonaslunde.com.
 A static site: open `index.html` through any web server (`python3 serve.py`, then
 http://localhost:8000). It does not work from `file://`, because it uses a Web Worker.
 
@@ -11,11 +11,11 @@ http://localhost:8000). It does not work from `file://`, because it uses a Web W
 
 | File | What it does |
 |---|---|
-| `tafl.js` | Rules engine: the named rule sets, board as an `Int8Array`, captures (shieldwall included), exit fort, encirclement, repetition, network input planes, policy index. A port of `tafl.py` and `features.py`. |
-| `mcts.js` | Tree search guided by the network, a port of `mcts.py` (FPU, discount, temperature as in Python). |
+| `tafl.js` | Rules engine: the named rule sets, board as an `Int8Array`, captures (shieldwall included), exit fort, encirclement, repetition, network input planes, policy index, the first move that wins at once. A port of `tafl.py` and `features.py`. |
+| `mcts.js` | Tree search guided by the network, a port of `mcts.py` (FPU, discount, temperature and tree reuse as in Python). |
 | `network.js` | Runs an ONNX model, building its input from the model's `.json` description. Of its four outputs the search uses the policy and the value; the ending probabilities and the moves left show in a card on the eval bar. |
-| `searchWorker.js`, `searchClient.js` | The network and the search run in a Web Worker; the client wraps it in promises. |
-| `script.js`, `index.html`, `styles.css` | The page: board, input, game set-up, AI players, eval bar, move suggestions. |
+| `searchWorker.js`, `searchClient.js` | The network and the search run in a Web Worker, which keeps the last search's tree for the next search; the client wraps the worker in promises. |
+| `script.js`, `index.html`, `styles.css` | The page: board, input, game set-up, AI players (a move that wins at once is played without a search), eval bar, move suggestions. |
 | `Cpp_ai.js`, `Cpp_ai.wasm` | The Minimax AI (C++), which knows only 7×7 boards and the old Brandubh rules; its moves are checked against the engine. |
 | `models.json` | The models the page offers, and the default model for each rule set. |
 
@@ -34,6 +34,8 @@ the Python engine, so regenerate it once the rule set is in the training code.
 2. Add an entry to `models.json` with an `id`, a display `name`, the `onnx` and `info` paths and an
    optional `note`. To make it the default for its rule set, put its id under `defaults`, keyed by
    the rule set name (for example `"brandubh_2"`).
+3. Regenerate the search reference (`tests/make_mcts_reference.py`, see below): it covers the models
+   of `models.json`, and `test_mcts.js` fails when a model it names is deleted.
 
 The board size, input planes, training rules and search settings all come from the `.json` file.
 Deprecated models are skipped: those trained before the named rule sets (descriptions without a
@@ -44,15 +46,16 @@ differ from its training rules, the page warns.
 ## Tests
 
 The tests compare the JavaScript with the Python training code, so they need it (and its Python
-environment, with `scipy` and `onnxruntime`) to write reference data:
+environment, with `torch`, `scipy` and `onnxruntime`) to write reference data:
 
 ```
 python tests/make_reference_games.py /path/to/Tafl_RL   # games under every rule set, the
                                                           # positions of test_rules.py, fuzzed
                                                           # exit forts and shieldwalls
-python tests/make_mcts_reference.py /path/to/Tafl_RL    # searches with the bundled models
+python tests/make_mcts_reference.py /path/to/Tafl_RL    # searches with the models of models.json,
+                                                          # from a new and from a kept tree
 cd tests && npm install && cd ..                          # onnxruntime-web for Node
-node tests/test_engine.js   # boards, legal moves, input planes and results, move by move
+node tests/test_engine.js   # boards, legal moves, winning moves, input planes and results, move by move
 node tests/test_mcts.js     # visit counts of the JS search against the Python search
 node tests/test_page.js     # the page in headless Chrome (needs Chrome and internet access)
 ```
