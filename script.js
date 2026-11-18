@@ -37,6 +37,9 @@ const RULESET_INFO = {
     simple_tafl: { title: 'Simple Tafl', defenders: '50 % of 142' },
     fetlar: { title: 'Fetlar Hnefatafl', defenders: '59 % of 1,564' },
 };
+// Default simulations per board size, for the AI players and the analysis: those of the training
+// runs' evaluation games (about 0.25, 0.7 and 2 s per move on a fast desktop CPU)
+const DEFAULT_SIMS = { 7: 800, 9: 400, 11: 400 };
 // Endless analysis stops here: the search tree grows with every simulation
 const MAX_ANALYSIS_SIMS = { 7: 100000, 9: 50000, 11: 25000 };
 const SLIDE_MS = 400;
@@ -65,13 +68,13 @@ const app = {
     msPerCall: null,
     searchParams: modelSearchSettings(null),
     players: {
-        attacker: { type: 'human', sims: 200, depth: 4 },
-        defender: { type: 'human', sims: 200, depth: 4 },
+        attacker: { type: 'human', simsBySize: { ...DEFAULT_SIMS }, depth: 4 },
+        defender: { type: 'human', simsBySize: { ...DEFAULT_SIMS }, depth: 4 },
     },
     evalMode: 'nn-mcts',
     policyMode: 'off',
     temperature: 0.4,
-    analysisSims: 200,
+    analysisSimsBySize: { ...DEFAULT_SIMS },
     continuous: false,
     started: false,       // a game has been started from the menu (before, the board is only a backdrop)
     paused: true,         // the menu is open: no AI moves and no analysis
@@ -332,6 +335,7 @@ function setUpBoard(rules) {
     buildBoard();
     render();
     centerEval();
+    showPlayOptions();  // the simulation sliders hold the values of this board size
 }
 
 function newGame(rules, model) {
@@ -406,7 +410,7 @@ async function runAI(token) {
         return;
     } else if (config.type === 'mcts' && app.modelState === 'ready') {
         setThinking(true);
-        const job = client.search(app.game, { ...app.searchParams, sims: config.sims, progressMs: 200 }, (stats) => {
+        const job = client.search(app.game, { ...app.searchParams, sims: config.simsBySize[app.size], progressMs: 200 }, (stats) => {
             if (token === app.token) showSearchStats(stats);
         });
         let result = null;
@@ -753,7 +757,7 @@ function startAnalysis(token, aiSearches) {
         if (app.evalMode === 'nn-mcts') setEval(null, 'searching…');
         const params = {
             ...app.searchParams,
-            sims: app.continuous ? 0 : app.analysisSims,
+            sims: app.continuous ? 0 : app.analysisSimsBySize[app.size],
             maxSims: MAX_ANALYSIS_SIMS[app.size],
             progressMs: 250,
         };
@@ -1210,8 +1214,8 @@ function openMenu() {
     for (const side of SIDES) {
         const p = app.players[side];
         $(`ng-${side}-type`).value = p.type;
-        $(`ng-${side}-sims`).value = p.sims;
-        $(`ng-${side}-sims-value`).textContent = p.sims;
+        $(`ng-${side}-sims`).value = p.simsBySize[app.size];
+        $(`ng-${side}-sims-value`).textContent = p.simsBySize[app.size];
         $(`ng-${side}-depth`).value = p.depth;
         $(`ng-${side}-depth-value`).textContent = p.depth;
     }
@@ -1247,15 +1251,13 @@ function updateMenuOptions(size) {
 
 function startGameFromMenu() {
     for (const side of SIDES) {
-        Object.assign(app.players[side], {
-            type: $(`ng-${side}-type`).value,
-            sims: Number($(`ng-${side}-sims`).value),
-            depth: Number($(`ng-${side}-depth`).value),
-        });
+        const p = app.players[side];
+        p.type = $(`ng-${side}-type`).value;
+        p.simsBySize[newGameForm.size()] = Number($(`ng-${side}-sims`).value);
+        p.depth = Number($(`ng-${side}-depth`).value);
     }
     app.evalMode = $('ng-eval-mode').value;
     app.policyMode = $('ng-policy-mode').value;
-    showPlayOptions();
     $('menuText').classList.add('hidden');
     app.started = true;
     app.paused = false;
@@ -1326,7 +1328,7 @@ function savePrefs() {
             evalMode: app.evalMode,
             policyMode: app.policyMode,
             temperature: app.temperature,
-            analysisSims: app.analysisSims,
+            analysisSimsBySize: app.analysisSimsBySize,
             continuous: app.continuous,
         }));
     } catch (e) {
@@ -1335,40 +1337,50 @@ function savePrefs() {
 }
 
 function applyPrefs(prefs) {
+    // Simulations are kept per board size (older preferences had one count for all sizes; those
+    // are ignored, so the defaults apply)
+    const readSims = (target, saved) => {
+        for (const size of Object.keys(DEFAULT_SIMS)) {
+            if (saved && Number.isFinite(saved[size])) target[size] = saved[size];
+        }
+    };
     for (const side of SIDES) {
         const p = prefs.players && prefs.players[side];
         if (!p) continue;
         if (['human', 'mcts', 'minimax'].includes(p.type)) app.players[side].type = p.type;
-        if (Number.isFinite(p.sims)) app.players[side].sims = p.sims;
+        readSims(app.players[side].simsBySize, p.simsBySize);
         if (Number.isFinite(p.depth)) app.players[side].depth = p.depth;
     }
     if (['off', 'heuristic', 'nn', 'nn-mcts'].includes(prefs.evalMode)) app.evalMode = prefs.evalMode;
     if (['off', 'nn', 'nn-mcts'].includes(prefs.policyMode)) app.policyMode = prefs.policyMode;
     if (Number.isFinite(prefs.temperature)) app.temperature = prefs.temperature;
-    if (Number.isFinite(prefs.analysisSims)) app.analysisSims = prefs.analysisSims;
+    readSims(app.analysisSimsBySize, prefs.analysisSimsBySize);
     app.continuous = Boolean(prefs.continuous);
     if (prefs.modelBySize && typeof prefs.modelBySize === 'object') app.modelBySize = { ...prefs.modelBySize };
     showPlayOptions();
     $('temperature-slider').value = app.temperature;
     $('temperature-value').textContent = app.temperature.toFixed(2);
-    $('mcts-simulations-slider').value = app.analysisSims;
-    $('mcts-simulations-value').textContent = app.analysisSims;
     $('continuous-eval-toggle').checked = app.continuous;
 }
 
-/** Show the players, their strength, the eval bar and the suggestions in the menus below the board. */
+/**
+ * Show the players, their strength, the eval bar, the suggestions and the analysis simulations
+ * (those of the current board size) in the menus below the board and in the settings.
+ */
 function showPlayOptions() {
     for (const side of SIDES) {
         const p = app.players[side];
         $(`${side}-type`).value = p.type;
-        $(`${side}-mcts-difficulty`).value = p.sims;
-        $(`${side}-mcts-value`).textContent = p.sims;
+        $(`${side}-mcts-difficulty`).value = p.simsBySize[app.size];
+        $(`${side}-mcts-value`).textContent = p.simsBySize[app.size];
         $(`${side}-minimax-difficulty`).value = p.depth;
         $(`${side}-minimax-value`).textContent = p.depth;
         updateDifficultyVisibility(side);
     }
     $('eval-mode-select').value = app.evalMode;
     $('policy-mode-select').value = app.policyMode;
+    $('mcts-simulations-slider').value = app.analysisSimsBySize[app.size];
+    $('mcts-simulations-value').textContent = app.analysisSimsBySize[app.size];
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -1393,7 +1405,7 @@ function bindEvents() {
             onPositionChanged();
         });
         $(`${side}-mcts-difficulty`).addEventListener('input', (event) => {
-            app.players[side].sims = Number(event.target.value);
+            app.players[side].simsBySize[app.size] = Number(event.target.value);
             $(`${side}-mcts-value`).textContent = event.target.value;
             savePrefs();
         });
@@ -1443,6 +1455,10 @@ function bindEvents() {
         const size = newGameForm.size();
         fillRulesetSelect(size, null);
         fillModelSelect($('ng-model'), size, defaultModelFor(newGameForm.rules()));
+        for (const side of SIDES) {
+            $(`ng-${side}-sims`).value = app.players[side].simsBySize[size];
+            $(`ng-${side}-sims-value`).textContent = app.players[side].simsBySize[size];
+        }
         updateMenuOptions(size);
         updateMenuNotes();
     });
@@ -1483,7 +1499,7 @@ function bindEvents() {
         $('mcts-simulations-value').textContent = event.target.value;
     });
     $('mcts-simulations-slider').addEventListener('change', (event) => {
-        app.analysisSims = Number(event.target.value);
+        app.analysisSimsBySize[app.size] = Number(event.target.value);
         savePrefs();
         refreshAnalysis();
     });

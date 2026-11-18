@@ -298,14 +298,18 @@ async function main() {
         await click('#menu-btn');
         await setSelect('ng-variant', '11');
         check(await evaluate('document.getElementById("ng-ruleset").value') === 'copenhagen' &&
-            await evaluate('document.getElementById("ng-model").value') === 'copenhagen_baseline_400', 'an 11x11 game defaults to Copenhagen and its model');
+            await evaluate('document.getElementById("ng-model").value') === await evaluate('app.defaults.copenhagen'),
+            'an 11x11 game defaults to Copenhagen and its model');
+        check(await evaluate('document.getElementById("ng-defender-sims").value') === '400',
+            'the menu shows the simulations of the 11x11 board');
         // The players are chosen in the menu too: a human attacker against the network
         await setSelect('ng-defender-type', 'mcts');
         check(!(await hidden('ng-defender-mcts')) && await hidden('ng-attacker-mcts'), 'the menu shows the strength of an AI player');
         await setRange('ng-defender-sims', 100);
         await click('#ng-start');
         await waitFor('app.rules.name === "copenhagen" && app.modelState === "ready"', 'the Copenhagen model', 60000);
-        check(await evaluate('app.players.defender.type') === 'mcts' && await evaluate('app.players.defender.sims') === 100 &&
+        check(await evaluate('app.players.defender.type') === 'mcts' && await evaluate('app.players.defender.simsBySize[11]') === 100 &&
+            await evaluate('app.players.defender.simsBySize[7]') === 800 &&
             await evaluate('document.getElementById("defender-type").value') === 'mcts' &&
             await evaluate('document.getElementById("defender-mcts-difficulty").value') === '100',
             'the game gets the players of the menu, and the menus below the board show them');
