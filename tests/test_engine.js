@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Replays the reference games of tests/make_reference_games.py in tafl.js and requires, for every
- * move, the same board, player to move, legal moves (in the same order), input planes, and the
- * same position and result after the move as the Python engine.
+ * move, the same board, player to move, legal moves (in the same order), input planes, first move
+ * that wins at once, and the same position and result after the move as the Python engine.
  *
  * Random games are replayed from the start, so the incremental parts of the engine (position keys,
  * repetition counts, history planes) are checked too. The recorded moves of the rule positions of
@@ -53,6 +53,12 @@ function checkBefore(game, ply, planes, where, stats) {
         return fail(where, missing.length || extra.length
             ? `legal moves differ: missing ${missing.join(' ')} extra ${extra.join(' ')}`
             : 'legal moves in a different order');
+    }
+    if (ply.win_in_one !== undefined) {  // not in files from before the win check
+        const win = game.winningMove();
+        const name = (m) => (m === null ? 'none' : Tafl.moveName(game.N, m));
+        if (win !== ply.win_in_one) return fail(where, `winning move: JS ${name(win)}, Python ${name(ply.win_in_one)}`);
+        if (win !== null) stats.wins++;
     }
     stats.planeChecks++;
     const x = Tafl.buildFeatures(game, planes);
@@ -105,7 +111,7 @@ for (const file of files) {
         continue;
     }
     const planes = Tafl.parsePlanes(data.planes);
-    const stats = { games: 0, plies: 0, planeChecks: 0, captures: 0, reasons: {} };
+    const stats = { games: 0, plies: 0, planeChecks: 0, wins: 0, captures: 0, reasons: {} };
     const failuresBefore = failures;
     const label = path.basename(file).replace(/^reference_|\.json\.gz$/g, '');
 
@@ -139,7 +145,8 @@ for (const file of files) {
 
     const ok = failures === failuresBefore;
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}: ${stats.games} games, ${stats.plies} moves, ` +
-        `${stats.planeChecks} plane checks, ${stats.captures} pieces captured, endings ${JSON.stringify(stats.reasons)}`);
+        `${stats.planeChecks} plane checks, ${stats.wins} wins in one, ${stats.captures} pieces captured, ` +
+        `endings ${JSON.stringify(stats.reasons)}`);
 }
 
 if (failures > MAX_REPORTS) console.log(`... ${failures - MAX_REPORTS} more failures`);

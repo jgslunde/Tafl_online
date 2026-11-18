@@ -458,6 +458,19 @@
             return this.legalMoves().includes(move);
         }
 
+        /**
+         * The first legal move (in engine order) that wins the game at once for the player to
+         * move, or null. Python: the mate-in-1 check of self-play in train.py.
+         */
+        winningMove() {
+            for (const move of this.legalMoves()) {
+                const g = this.clone();
+                g.makeMove(move);
+                if (g.winner === this.currentPlayer) return move;
+            }
+            return null;
+        }
+
         /** Legal moves of the piece on a square (empty unless it belongs to the player to move). */
         legalMovesFrom(sq) {
             return this.legalMoves().filter(m => (m >> 8) === sq);

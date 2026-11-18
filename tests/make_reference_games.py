@@ -5,8 +5,8 @@ Write reference games from the Python engine (tafl.py), for tests/test_engine.js
 The JavaScript engine (tafl.js) must play exactly the game the networks were trained on. This
 script records, for every move: the position before it (board, player to move, earlier positions),
 all legal moves in engine order, all input planes (history of 3 positions, constant, reach,
-defender-region, king-region and repetition planes), the move, and the position and result after
-it. Three sources:
+defender-region, king-region and repetition planes), the first move that wins at once (if any), the
+move, and the position and result after it. Three sources:
 
 - games under each of the twelve named rule sets, from the start, with random moves biased towards
   what random play rarely reaches: captures, king moves, attackers next to the king, moves along the
@@ -62,6 +62,17 @@ def board_string(board):
     return ''.join(str(int(x)) for x in board.ravel())
 
 
+def win_in_one(game):
+    """The first legal move that wins at once for the player to move, packed, or None: the
+    mate-in-1 check of self-play in train.py."""
+    for move in game.get_legal_moves():
+        test = game.clone()
+        Tafl.make_move(test, move)  # the base class's method, so a RecordingTafl records nothing
+        if test.game_over and test.winner == game.current_player:
+            return pack(move, game.size)
+    return None
+
+
 def snapshot(game, with_history):
     """The position before a move. With the earlier positions too, if the JavaScript engine has to
     rebuild it on its own (the random games are replayed from the start instead)."""
@@ -70,6 +81,7 @@ def snapshot(game, with_history):
         'board': board_string(game.board), 'player': int(game.current_player),
         'legal': [pack(m, n) for m in game.get_legal_moves()],
         'planes': [''.join(str(int(x)) for x in plane.ravel()) for plane in build_features(game, PLANES).astype(np.int8)],
+        'win_in_one': win_in_one(game),
     }
     if with_history:
         ply['history'] = [[board_string(np.frombuffer(b, dtype=np.int8)), int(p)] for b, p in game.position_history[:-1]]

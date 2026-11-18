@@ -387,8 +387,12 @@ function onPositionChanged() {
 async function runAI(token) {
     if (token !== app.token || app.animating || !isAITurn()) return;
     const config = app.players[currentSide()];
-    let move = null;
-    if (config.type === 'minimax' && app.size === 7) {
+    // A move that wins at once is played without a search. Under its own rules the network gives
+    // such a move a high prior (self-play trains it to), but under other rules it can miss it.
+    let move = app.game.winningMove();
+    if (move !== null) {
+        // played below
+    } else if (config.type === 'minimax' && app.size === 7) {
         if (!cppReady) {
             setTimeout(() => runAI(token), 200);
             return;
