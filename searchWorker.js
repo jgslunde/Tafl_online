@@ -5,7 +5,9 @@
  * Messages from the page (each with an id; searchClient.js wraps them in promises):
  *   {type: 'load', modelId, url, info}         load an ONNX model and its description
  *   {type: 'search', state, params}            MCTS from a position (TaflGame.toState());
- *       params: {sims (0 = until stopped), cPuct, fpuReduction, discount, progressMs, maxSims}
+ *       params: {sims (0 = until stopped), cPuct, fpuReduction, discount, progressMs, maxSims}.
+ *       sims and maxSims count the root's visits, including those kept from the last search's
+ *       tree when it holds the position (as mcts.py does with a kept root)
  *   {type: 'evaluate', state}                  one network call: value, move priors, ending
  *                                              probabilities and plies left
  *   {type: 'cancel', ids}                      stop/drop jobs (all jobs if ids is missing)
@@ -24,6 +26,7 @@ ort.env.wasm.numThreads = 1;
 ort.env.wasm.wasmPaths = ORT_DIST;
 
 let model = null;      // {modelId, session, evaluator}
+let tree = null;       // the MCTS of the last search, whose subtree the next search may keep
 const queue = [];      // jobs waiting: {msg, stopped}
 let running = null;    // the job being worked on
 let pumping = false;
@@ -88,6 +91,7 @@ function yieldToEvents() {
 
 async function loadModel(job) {
     const { id, modelId, url, info } = job.msg;
+    tree = null;  // its values come from the old network
     if (model) {
         try { await model.session.release(); } catch (e) { /* already gone */ }
         model = null;
@@ -131,16 +135,19 @@ async function search(job) {
     const { id, state, params } = job.msg;
     const game = Tafl.TaflGame.fromState(state);
     requireModel(game);
-    const mcts = new TaflMCTS.MCTS(model.evaluator.evaluate, params);
-    mcts.reset(game);
+    // A tree searched with other settings is not kept
+    if (!tree || tree.cPuct !== params.cPuct || tree.fpuReduction !== params.fpuReduction || tree.discount !== params.discount) {
+        tree = new TaflMCTS.MCTS(model.evaluator.evaluate, params);
+    }
+    tree.moveRootTo(game);
     const limit = params.sims > 0 ? params.sims : Infinity;
     const maxSims = params.maxSims > 0 ? params.maxSims : Infinity;
     const progressMs = params.progressMs || 0;
     const t0 = performance.now();
     let lastYield = t0, lastProgress = t0;
     if (!game.gameOver) {
-        while (mcts.simulations < limit && mcts.simulations < maxSims && !job.stopped) {
-            await mcts.simulate();
+        while (tree.root.N < limit && tree.root.N < maxSims && !job.stopped) {
+            await tree.simulate();
             const now = performance.now();
             if (now - lastYield > 15) {
                 await yieldToEvents();
@@ -148,14 +155,14 @@ async function search(job) {
             }
             if (progressMs && now - lastProgress >= progressMs && !job.stopped) {
                 lastProgress = now;
-                self.postMessage({ type: 'progress', id, stats: withTiming(mcts.stats(), t0) });
+                self.postMessage({ type: 'progress', id, stats: withTiming(tree.stats(), t0) });
             }
         }
     }
     self.postMessage({
         type: 'done', id, stopped: job.stopped,
-        limitReached: mcts.simulations >= maxSims,
-        stats: withTiming(mcts.stats(), t0),
+        limitReached: tree.root.N >= maxSims,
+        stats: withTiming(tree.stats(), t0),
     });
 }
 

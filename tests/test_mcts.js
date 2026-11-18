@@ -43,10 +43,19 @@ async function main() {
         const params = modelSearchSettings(info);
         const mcts = new MCTS(evaluator.evaluate, params);
         mcts.reset(game);
-        for (let i = 0; i < c.sims; i++) await mcts.simulate();
+        while (mcts.root.N < c.sims) await mcts.simulate();
+        // A tree reuse case: play the recorded moves, then search on from the kept subtree, whose
+        // visits count toward the simulations
+        const where = `${c.model} after ${c.moves.length} moves${c.reuse.length ? ` + ${c.reuse.length} (reused tree)` : ''}`;
+        for (const m of c.reuse) game.makeMove(m);
+        if (c.reuse.length > 0 && !mcts.moveRootTo(game)) {
+            console.log(`FAIL ${where}: the searched position was not found in the tree`);
+            failed++;
+            continue;
+        }
+        while (mcts.root.N < c.sims) await mcts.simulate();
         const stats = mcts.stats();
 
-        const where = `${c.model} after ${c.moves.length} moves`;
         const all = await evaluator.evaluateAll(game, game.legalMoves());
         const endingDiff = Math.max(...all.ending.map(e => Math.abs(e.p - c.ending[e.ending])));
         if (all.ending.map(e => e.ending).join() !== Object.keys(c.ending).join() || !(endingDiff < 1e-4) ||
@@ -93,6 +102,30 @@ async function main() {
         if (!ok) failed++;
         console.log(`${ok ? 'ok  ' : 'FAIL'} output cache of ${model} with a repeated position: ` +
             `value ${again.value.toFixed(4)}, uncached ${direct.toFixed(4)}, first occurrence ${first.value.toFixed(4)}`);
+    }
+    // Tree reuse keeps the subtree of the same game state only: the same position, or one two plies
+    // on; not a position before the root (as after taking a move back), nor the same board under
+    // other rules
+    {
+        const uniform = async (game, moves) => ({ priors: moves.map(() => 1 / moves.length), value: 0 });
+        const mcts = new MCTS(uniform);
+        const start = new Tafl.TaflGame('brandubh_2');
+        mcts.reset(start);
+        for (let i = 0; i < 200; i++) await mcts.simulate();
+        const later = start.clone();
+        const [m1, m2] = mcts.stats().pv;  // the most visited line
+        later.makeMove(m1);
+        later.makeMove(m2);
+        const checks = [
+            mcts.moveRootTo(start) && mcts.root.N === 200,
+            mcts.moveRootTo(later) && mcts.root.N > 0,
+            !mcts.moveRootTo(start) && mcts.root.N === 0,
+        ];
+        for (let i = 0; i < 50; i++) await mcts.simulate();
+        checks.push(!mcts.moveRootTo(new Tafl.TaflGame('brandubh_1')));  // the same start position
+        const ok = checks.every(Boolean);
+        if (!ok) failed++;
+        console.log(`${ok ? 'ok  ' : 'FAIL'} tree reuse keeps the same game state only: ${checks}`);
     }
     console.log(`${cases.length} searches: ${exact} identical, ${close} within 2%, ${failed} different.`);
     process.exit(failed === 0 ? 0 : 1);

@@ -10,6 +10,9 @@
  * - With no visits yet (a single simulation), moves are chosen by the network's priors.
  * - Every node holds its own game (a TaflGame) with its own position history, so the repetition
  *   rule inside the tree follows the simulated line, not the real game.
+ * - Tree reuse: a search can start from the subtree of its position in the last search's tree
+ *   (moveRootTo), whose visits count toward the search's simulations, as with the root argument
+ *   of mcts.py's search.
  *
  * Works in the search Web Worker and in Node (tests). The network is behind an `evaluate`
  * function: async (game, legalMoves) => ({priors, value}), with priors over legalMoves (same
@@ -17,6 +20,8 @@
  */
 (function (root) {
     'use strict';
+
+    const Tafl = typeof module !== 'undefined' && module.exports ? require('./tafl.js') : root.Tafl;
 
     class MCTSNode {
         constructor(game) {
@@ -55,15 +60,37 @@
             this.fpuReduction = params.fpuReduction !== undefined ? params.fpuReduction : -0.25;
             this.discount = params.discount !== undefined ? params.discount : 1.0;
             this.root = null;
-            this.simulations = 0;
-            this.nodes = 0;
+            this.simulations = 0;  // simulations of the current search, kept visits not included
         }
 
         /** Start a new tree at a position (the game is copied). */
         reset(game) {
             this.root = new MCTSNode(game.clone());
             this.simulations = 0;
-            this.nodes = 1;
+        }
+
+        /**
+         * Start the next search at `game`: from its subtree, if the tree holds the position within
+         * two plies of the root (a searched node, after the moves of both sides since the last
+         * search), else from a new tree. Returns whether a subtree was kept.
+         */
+        moveRootTo(game) {
+            // The same game state: position, the positions since the last capture (repetition
+            // rule), the previous boards (history planes) and the rules
+            const same = (g) => g.positionKey() === game.positionKey() && g.repKeys.join() === game.repKeys.join() &&
+                g.prevBoards.join('|') === game.prevBoards.join('|') && Tafl.rulesEqual(g.rules, game.rules);
+            let level = this.root ? [this.root] : [];
+            for (let depth = 0; depth <= 2; depth++) {
+                const found = level.find(node => same(node.game));
+                if (found) {
+                    this.root = found;  // the rest of the tree is no longer referenced
+                    this.simulations = 0;
+                    return true;
+                }
+                level = level.flatMap(node => (node.children || []).filter(c => c !== null && c.N > 0));
+            }
+            this.reset(game);
+            return false;
         }
 
         /** PUCT selection; creates the child's game the first time a move is chosen. */
@@ -90,7 +117,6 @@
                 const game = node.game.clone();
                 game.makeMove(node.moves[bestIndex]);
                 child = children[bestIndex] = new MCTSNode(game);
-                this.nodes++;
             }
             return child;
         }
@@ -168,7 +194,6 @@
                 value: this.rootValue(),
                 terminal: root.game.gameOver,
                 simulations: this.simulations,
-                nodes: this.nodes,
                 children,
                 pv,
             };

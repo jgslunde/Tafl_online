@@ -8,6 +8,11 @@ browser uses, run with onnxruntime. The visit counts of every root move are reco
 on the same positions with onnxruntime-web should give the same counts. So are the network's
 ending probabilities (a softmax over the endings the rules allow) and plies left at the root.
 
+In two of the games, each search is followed by a tree reuse case: play the most visited move
+(in the second game also the most visited reply), then search again from the kept subtree
+(search(root=...)), whose visits count toward the simulations. Such a case records the moves played
+after the first search under 'reuse'.
+
 Usage (needs the training code's Python environment, with scipy and onnxruntime):
     python tests/make_mcts_reference.py /path/to/Tafl_RL [--sims 200] [--out tests/reference/mcts.json]
 """
@@ -82,6 +87,23 @@ def main():
         spec = FeatureSpec.from_dict(info['network']['features'])
         assert spec.plane_names() == info['input']['planes'], f'{base}: features and input planes disagree'
         mcts = MCTS(network, num_simulations=args.sims, feature_spec=spec, **params)
+
+        def record(position, played, reuse):
+            """Add the search just made at `position` (mcts.root) as a case."""
+            root = mcts.root
+            ending, moves_left = outlook(network, position, spec)
+            cases.append({
+                'model': base, 'rules': info['rules'], 'size': n, 'moves': list(played), 'reuse': reuse,
+                'sims': args.sims, 'params': params,
+                'children': [pack(m, n) for m in root.children],
+                'visits': [c.visit_count for c in root.children.values()],
+                'priors': [float(c.prior) for c in root.children.values()],
+                'root_value': root.mean_value,
+                'ending': ending, 'moves_left': moves_left,
+            })
+            print(f'{base} game {game_index} ply {position.move_count}{" (reused tree)" if reuse else ""}: '
+                  f'top visits {sorted(cases[-1]["visits"], reverse=True)[:5]}')
+
         for game_index in range(6):
             game = Tafl(rules)
             played = []
@@ -94,19 +116,21 @@ def main():
                 if game.game_over:
                     break
                 mcts.search(game)
-                root = mcts.root
-                ending, moves_left = outlook(network, game, spec)
-                cases.append({
-                    'model': base, 'rules': info['rules'], 'size': n, 'moves': list(played),
-                    'sims': args.sims, 'params': params,
-                    'children': [pack(m, n) for m in root.children],
-                    'visits': [c.visit_count for c in root.children.values()],
-                    'priors': [float(c.prior) for c in root.children.values()],
-                    'root_value': root.mean_value,
-                    'ending': ending, 'moves_left': moves_left,
-                })
-                print(f'{base} game {game_index} ply {game.move_count}: top visits '
-                      f'{sorted(cases[-1]["visits"], reverse=True)[:5]}')
+                record(game, played, [])
+                if game_index >= 2:
+                    continue
+                # Tree reuse: follow the most visited moves (1 or 2 plies) to a searched position
+                node, after, reuse = mcts.root, game.clone(), []
+                for _ in range(game_index + 1):
+                    move, node = max(node.children.items(), key=lambda item: item[1].visit_count)
+                    if node.visit_count == 0 or node.game.game_over:
+                        break
+                    after.make_move(move)
+                    reuse.append(pack(move, n))
+                if len(reuse) == game_index + 1:
+                    node.parent = None
+                    mcts.search(after, root=node)
+                    record(after, played, reuse)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     json.dump(cases, open(args.out, 'w'))
     print(f'{len(cases)} searches -> {args.out}')

@@ -53,8 +53,10 @@
                 <p>
                     "NN + MCTS" is trained by reinforcement learning, as AlphaZero was. A neural network (NN)
                     suggests moves and judges positions, and a Monte Carlo tree search (MCTS) guided by it looks
-                    ahead. More simulations make it stronger and slower. A network plays well only under the
-                    rules it was trained with; the line above the board warns when the rules differ.
+                    ahead. More simulations make it stronger and slower. A search goes on from the part of the
+                    last search that is still useful after the moves since, so the AI sometimes moves at once.
+                    A network plays well only under the rules it was trained with; the line above the board
+                    warns when the rules differ.
                 </p>
                 <p>
                     "Minimax" (7×7 only) searches every line a fixed number of moves deep and judges the
