@@ -59,6 +59,3 @@ node tests/test_engine.js   # boards, legal moves, winning moves, input planes a
 node tests/test_mcts.js     # visit counts of the JS search against the Python search
 node tests/test_page.js     # the page in headless Chrome (needs Chrome and internet access)
 ```
-
-## TODO (frontend)
-- Display number of lost pieces.
