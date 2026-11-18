@@ -62,6 +62,12 @@ def board_string(board):
     return ''.join(str(int(x)) for x in board.ravel())
 
 
+def write_json_gz(path, data):
+    """Write `data` as gzipped JSON with a fixed time stamp, so the same data gives the same file."""
+    with gzip.GzipFile(path, 'wb', mtime=0) as f:
+        f.write(json.dumps(data).encode())
+
+
 def win_in_one(game):
     """The first legal move that wins at once for the player to move, packed, or None: the
     mate-in-1 check of self-play in train.py."""
@@ -291,8 +297,7 @@ def main():
     rng = np.random.default_rng(args.seed)
     forts, captures = fuzz_cases(rng)
     path = os.path.join(args.out, 'fuzz_forts_and_captures.json.gz')
-    with gzip.open(path, 'wt') as f:
-        json.dump({'forts': forts, 'captures': captures}, f)
+    write_json_gz(path, {'forts': forts, 'captures': captures})
     walls = sum(1 for c in captures if len(c['captured']) >= 2 and c['rules']['shieldwall'])
     print(f'fuzz: {len(forts)} fort positions ({sum(f["fort"] for f in forts)} forts), '
           f'{len(captures)} captures ({walls} with two or more pieces) -> {path}')
@@ -304,8 +309,7 @@ def main():
     for name in RULESETS:
         games = [play(name, rng) for _ in range(args.games)]
         path = os.path.join(args.out, f'reference_{name}.json.gz')
-        with gzip.open(path, 'wt') as f:
-            json.dump({'planes': PLANES.plane_names(), 'games': games}, f)
+        write_json_gz(path, {'planes': PLANES.plane_names(), 'games': games})
         plies = sum(len(g['plies']) for g in games)
         endings = {}
         for g in games:
@@ -315,8 +319,7 @@ def main():
         print(f'{name}: {len(games)} games, {plies} plies, results {endings} -> {path}')
     records = rule_positions()
     path = os.path.join(args.out, 'reference_rule_positions.json.gz')
-    with gzip.open(path, 'wt') as f:
-        json.dump({'planes': PLANES.plane_names(), 'games': records}, f)
+    write_json_gz(path, {'planes': PLANES.plane_names(), 'games': records})
     print(f'test_rules.py: {len(records)} recorded moves -> {path}')
 
 

@@ -47,7 +47,11 @@ class OnnxNetwork:
     """Stands in for the torch network in mcts.py: same call signature, outputs from onnxruntime."""
 
     def __init__(self, path):
-        self.session = ort.InferenceSession(path, providers=['CPUExecutionProvider'])
+        # One thread: a single small position gains nothing from more, and onnxruntime's default
+        # pool keeps every core of the machine busy
+        options = ort.SessionOptions()
+        options.intra_op_num_threads = options.inter_op_num_threads = 1
+        self.session = ort.InferenceSession(path, options, providers=['CPUExecutionProvider'])
         self.input_name = self.session.get_inputs()[0].name
 
     def eval(self):
